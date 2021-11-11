@@ -1,6 +1,7 @@
 #include "MultiMap.h"
 #include <TinyGPSPlus.h>
 #include <SoftwareSerial.h>
+#include <RunningMedian.h>
 
 //__________GPS_____________________________________________
 
@@ -25,6 +26,8 @@ const int analogOutPin = 9; // Analog output pin that the Speedo is attached to
 //__________VARIABLES____________________________________________
 
 boolean DEBUG = false;
+
+RunningMedian samplesVSS = RunningMedian(5);
 
 
 volatile  unsigned long startTime = 0;
@@ -72,6 +75,12 @@ void setup() {
 
   // GPS Not Working
   // ss.begin(GPSBaud);
+
+  // Fill running median with pulselengh matching 0 kmh
+  for (int i = 0; i < 5; i++) {
+    samplesVSS.add(500000);
+  }
+
 }
 
 //____________LOOP_______________________________________________________
@@ -79,15 +88,14 @@ void setup() {
 void loop() {
 
   if (DEBUG) {
-    getVSSSpeed();
+    //getVSSSpeed();
+    printValues();
   }
 
   // GPS
   //getGPSSpeed();
   //GPS Not working :(, use VSS only
   getVSSSpeed();
-  // DEBUG
-  printValues();
 
   // Speedo
   updateSpeedo();
@@ -134,12 +142,19 @@ void getVSSSpeed() {
     newPulseDurationAvailable = false;
 
     // filter out spikes
-    if(inputDuration < vssIn[0]){
+    if (inputDuration < vssIn[0] || inputDuration > vssIn[19]) {
       return;
     }
 
-    // interpolate VSS pulselength to speed in KmH
-    speedKmH = multiMap(inputDuration, vssIn, vssOut, 20);
+    // interpolate VSS pulselength to speed in KmH (without median)
+    //speedKmH = multiMap(inputDuration, vssIn, vssOut, 20);
+
+    // add pulselength to running median
+    samplesVSS.add(inputDuration);
+
+    // set speed to current median
+    long medianInputDuration = samplesVSS.getMedian();
+    speedKmH = multiMap(medianInputDuration, vssIn, vssOut, 20);
 
     //Serial.println("VSS Speed set");
 
@@ -197,7 +212,7 @@ void printValues() {
 
   // Houw often to scan the input (1 times per second)
   if (currentMicros - previousMicros_InputRead >= 1000000) {
-    // save the last time you blinked the LED
+    // save the last time
     previousMicros_InputRead = currentMicros;
 
     //      print the results to the Serial Monitor:

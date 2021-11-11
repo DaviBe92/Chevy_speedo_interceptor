@@ -4,5 +4,5 @@
 
 ## TODO:
 
-- Eliminate short pulse anomalies
-- Use averaging algorythm to smooth values, 3 samples < 30kmh; 5 samples > 30kmh
+- Eliminate short pulse anomalies // done
+- Use averaging algorythm to smooth values, 3 samples < 30kmh; 5 samples > 30kmh // done, used running median at 5 samples
