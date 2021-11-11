@@ -54,15 +54,15 @@ long speedoOut[] = {200000, 119900, 74730, 46510, 36450, 29110, 24730, 20960, 18
 
 
 
-long vssIn[] = {6428, 6923, 7500, 8181, 9000, 10000, 11250, 12850, 15000, 18000, 22500, 30000, 45000, 85800, 244200, 500000};
-long vssOut[] =  {140, 130, 120, 110, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 5, 0};
+long vssIn[] = {5000, 5294, 5625, 6000, 6428, 6923, 7500, 8181, 9000, 10000, 11250, 12850, 15000, 18000, 22500, 30000, 45000, 85800, 244200, 500000};
+long vssOut[] =  {180, 170, 160, 150, 140, 130, 120, 110, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 5, 0};
 
 //_______________SETUP___________________________________________________
 
 void setup() {
   // initialize serial communications at 9600 bps:
-  if(DEBUG){
-  Serial.begin(115200);
+  if (DEBUG) {
+    Serial.begin(115200);
   }
   pinMode(analogOutPin, OUTPUT);    // sets the digital pin 9 as output
   digitalWrite(analogOutPin, HIGH);
@@ -70,8 +70,8 @@ void setup() {
   pinMode(inputPin, INPUT_PULLUP);
   //attachInterrupt(digitalPinToInterrupt(inputPin), pulseLength, CHANGE);
 
-// GPS Not Working
- // ss.begin(GPSBaud);
+  // GPS Not Working
+  // ss.begin(GPSBaud);
 }
 
 //____________LOOP_______________________________________________________
@@ -85,7 +85,7 @@ void loop() {
   // GPS
   //getGPSSpeed();
   //GPS Not working :(, use VSS only
-getVSSSpeed();
+  getVSSSpeed();
   // DEBUG
   printValues();
 
@@ -133,7 +133,13 @@ void getVSSSpeed() {
 
     newPulseDurationAvailable = false;
 
-    speedKmH = multiMap(inputDuration, vssIn, vssOut, 16);
+    // filter out spikes
+    if(inputDuration < vssIn[0]){
+      return;
+    }
+
+    // interpolate VSS pulselength to speed in KmH
+    speedKmH = multiMap(inputDuration, vssIn, vssOut, 20);
 
     //Serial.println("VSS Speed set");
 
