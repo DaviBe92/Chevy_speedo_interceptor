@@ -1,0 +1,2 @@
+- Goes to huge speed at idle
+- Wobbly speed at high speeds / maybe use averageing 
