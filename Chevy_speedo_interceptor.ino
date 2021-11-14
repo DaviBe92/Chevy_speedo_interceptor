@@ -26,6 +26,7 @@ const int analogOutPin = 9; // Analog output pin that the Speedo is attached to
 //__________VARIABLES____________________________________________
 
 boolean DEBUG = false;
+boolean SELFTEST = true;
 
 RunningMedian samplesVSS = RunningMedian(5);
 
@@ -79,6 +80,10 @@ void setup() {
   // Fill running median with pulselengh matching 0 kmh
   for (int i = 0; i < 5; i++) {
     samplesVSS.add(500000);
+  }
+
+  if (SELFTEST) {
+    selfTest();
   }
 
 }
@@ -146,17 +151,18 @@ void getVSSSpeed() {
       return;
     }
 
-    // interpolate VSS pulselength to speed in KmH (without median)
-    //speedKmH = multiMap(inputDuration, vssIn, vssOut, 20);
+    // if speed is below 20 kmh use raw VSS data, else use median
+    if (inputDuration > 45000) {
+      // interpolate VSS pulselength to speed in KmH (without median)
+      speedKmH = multiMap(inputDuration, vssIn, vssOut, 20);
+    } else {
+      // add pulselength to running median
+      samplesVSS.add(inputDuration);
 
-    // add pulselength to running median
-    samplesVSS.add(inputDuration);
-
-    // set speed to current median
-    long medianInputDuration = samplesVSS.getMedian();
-    speedKmH = multiMap(medianInputDuration, vssIn, vssOut, 20);
-
-    //Serial.println("VSS Speed set");
+      // set speed to current median
+      long medianInputDuration = samplesVSS.getMedian();
+      speedKmH = multiMap(medianInputDuration, vssIn, vssOut, 20);
+    }
 
   } else {
     // If no current speed signal is avaiable, activate interrupt to get new one
@@ -228,5 +234,31 @@ void printValues() {
     Serial.println(outputValue);
 
   }
+}
+
+void selfTest() {
+
+  speedKmH = 0;
+
+  // set speedo to 140kmh and back
+
+  while (speedKmH < 140) {
+    speedKmH++;
+    updateSpeedo();
+  }
+  // stay at 140 for a second
+  unsigned long startingMillis = millis();
+
+  while (startingMillis + 1200 > millis()) {
+    updateSpeedo();
+  }
+
+  while (speedKmH  > 0) {
+    speedKmH--;
+    updateSpeedo();
+  }
+
+
+
 
 }
