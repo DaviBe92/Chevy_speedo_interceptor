@@ -105,6 +105,9 @@ void loop() {
   // Speedo
   updateSpeedo();
 
+  // Check if car is not moving anymore but a new pulse is present
+  checkPulseTimeout();
+
 }
 
 //____________FUNCTIONS___________________________________________________
@@ -209,6 +212,14 @@ void pulseLength() {
       inputDuration = stopTime - startTime;
       newPulseDurationAvailable = true;
     }
+  }
+}
+
+void checkPulseTimeout() {
+  // Check if car is not moving anymore but a new pulse is present
+  // if no endpulse is triggering cancel pulse after timeout (e.g. when comming to a halt)
+  if (newPulse && startTime + vssIn[19] > micros()) {
+    newPulse = false;
   }
 }
 
