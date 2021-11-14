@@ -72,7 +72,6 @@ void setup() {
   digitalWrite(analogOutPin, HIGH);
 
   pinMode(inputPin, INPUT_PULLUP);
-  //attachInterrupt(digitalPinToInterrupt(inputPin), pulseLength, CHANGE);
 
   // GPS Not Working
   // ss.begin(GPSBaud);
@@ -100,13 +99,14 @@ void loop() {
   // GPS
   //getGPSSpeed();
   //GPS Not working :(, use VSS only
+  // VSS
   getVSSSpeed();
-
-  // Speedo
-  updateSpeedo();
 
   // Check if car is not moving anymore but a new pulse is present
   checkPulseTimeout();
+
+  // Speedo
+  updateSpeedo();
 
 }
 
@@ -150,7 +150,7 @@ void getVSSSpeed() {
     newPulseDurationAvailable = false;
 
     // filter out spikes
-    if (inputDuration < vssIn[0] || inputDuration > vssIn[19]) {
+    if (inputDuration < vssIn[0]) {
       return;
     }
 
@@ -218,8 +218,12 @@ void pulseLength() {
 void checkPulseTimeout() {
   // Check if car is not moving anymore but a new pulse is present
   // if no endpulse is triggering cancel pulse after timeout (e.g. when comming to a halt)
-  if (newPulse && startTime + vssIn[19] > micros()) {
+  if (newPulse && micros() > startTime + vssIn[19]) {
     newPulse = false;
+    speedKmH = 0;
+  } else if(!newPulseDurationAvailable && micros() > stopTime + vssIn[19]){
+    // if no pulse is comming, speed = 0
+        speedKmH = 0;
   }
 }
 
@@ -260,7 +264,7 @@ void selfTest() {
   // stay at 140 for a second
   unsigned long startingMillis = millis();
 
-  while (startingMillis + 1200 > millis()) {
+  while (startingMillis + 1500 > millis()) {
     updateSpeedo();
   }
 
